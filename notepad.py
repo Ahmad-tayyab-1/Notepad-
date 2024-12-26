@@ -1,6 +1,7 @@
 import tkinter as tk
 from tkinter import filedialog, messagebox, font, colorchooser, ttk
-
+import os
+import json
 
 class Notepad:
     def __init__(self, root):
@@ -94,21 +95,25 @@ class Notepad:
         )
         if self.file:
             with open(self.file, "r") as file:
+                content = file.read()
                 self.text_area.delete(1.0, tk.END)
-                self.text_area.insert(1.0, file.read())
+                self.text_area.insert(1.0, content)
             self.text_changed = False
             self.root.title(f"{self.file} - Notepad")
+            self.load_settings()
+
 
     def save_file(self):
-        if self.file:  # Save to the existing file
+        if self.file:
             try:
                 with open(self.file, "w") as file:
-                    file.write(self.text_area.get(1.0, tk.END).rstrip())  # Remove trailing newline
+                    file.write(self.text_area.get(1.0, tk.END).rstrip())  # Save text content
+                self.save_settings()
                 self.text_changed = False
                 self.root.title(f"{self.file} - Notepad")
             except Exception as e:
                 messagebox.showerror("Save Error", f"Failed to save file: {e}")
-        else:  # If no file exists, fall back to Save As
+        else:
             self.save_as_file()
 
     def save_as_file(self):
@@ -119,6 +124,7 @@ class Notepad:
         if self.file:
             with open(self.file, "w") as file:
                 file.write(self.text_area.get(1.0, tk.END))
+            self.save_settings()
             self.text_changed = False
             self.root.title(f"{self.file} - Notepad")
 
@@ -189,6 +195,28 @@ class Notepad:
 
     def show_about(self):
         messagebox.showinfo("About", "Notepad application created with tkinter in Python .")
+
+    def save_settings(self):
+        if self.file:
+            settings_file = f"{self.file}.meta"
+            settings = {
+                "font_family": self.current_font_family,
+                "font_size": self.current_font_size,
+                "text_color": self.text_color,
+            }
+            with open(settings_file, "w") as meta:
+                json.dump(settings, meta)
+
+    def load_settings(self):
+        if self.file:
+            settings_file = f"{self.file}.meta"
+            if os.path.exists(settings_file):
+                with open(settings_file, "r") as meta:
+                    settings = json.load(meta)
+                    self.current_font_family = settings.get("font_family", "Arial")
+                    self.current_font_size = settings.get("font_size", 12)
+                    self.text_color = settings.get("text_color", "black")
+                    self.text_area.config(font=(self.current_font_family, self.current_font_size), fg=self.text_color)
 
 
 if __name__ == "__main__":
